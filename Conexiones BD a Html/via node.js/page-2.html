@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Salida de Vehículos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        function pagehome() {
+            window.location.href = "index.html";
+        }
+        </script>
+
+<div style="padding: 20px;">
+    <h1 style="color: #004d99;">Registro Salida de Vehículos</h1>
+    
+    <label style="font-weight: bold;">Placa del Vehículo:</label>
+    <input id="input-placa-salida" type="text" value="" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+    
+    <label style="font-weight: bold;">Tipo del Vehículo:</label>
+    <select id="dropdown-Tipo_VS" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+        <option value="Carro">Carro</option>
+        <option value="Camioneta">Camioneta</option>
+        <option value="Moto">Moto</option>
+    </select>
+    
+    <button id="submit-salida" style="background-color: #004d99; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%;">Registrar Salida</button>
+    
+    <div id="output-message-salida" style="margin-top: 20px;"></div>
+</div>
+
+    <button onclick="pagehome()">Volver al Inicio</button>
+</body>
+</html>

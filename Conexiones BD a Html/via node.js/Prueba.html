@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Borrar Datos - Parqueadero</title>
+    <style>
+        label, input, button {
+            display: block;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Borrar un Vehículo de la Base de Datos</h1>
+
+    <form id="borrar-form">
+        <label for="Placa_vehiculo">Placa del Vehículo:</label>
+        <input type="text" id="Placa_vehiculo" name="Placa_vehiculo" required>
+        
+        <label for="Tipo_vehiculo">Tipo del Vehículo:</label>
+        <input type="text" id="Tipo_vehiculo" name="Tipo_vehiculo" required>
+        
+        <button type="submit">Borrar Vehículo</button>
+    </form>
+
+    <p id="mensaje-borrar"></p>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="app.js"></script>
+
+</body>
+</html>

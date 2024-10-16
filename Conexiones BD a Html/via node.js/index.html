@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Registro de Parqueadero</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f7f7f7;
+            padding: 50px;
+        }
+        h1, h2 {
+            color: #333;
+            font-weight: bold;
+        }
+        h1 {
+            font-size: 4em;
+        }
+        h2 {
+            font-size: 3em;
+        }
+        .button {
+            background-color: #004d99;
+            color: white;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            width: 250px;
+            font-size: 1.2em;
+            transition: transform 0.5s;
+        }
+        .counter {
+            font-size: 2em;
+            color: #333;
+            font-weight: bold;
+        }
+        .table-container {
+            margin-top: 50px;
+            text-align: left;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+<body>
+    <div id="contador-lugares"></div>
+        Lugares disponibles: <span id="disponibles">Cargando...</span>
+    </div>
+
+    <script src="Pagina.js"></script>
+    <script>
+        function page1() {
+            window.location.href = "page-1.html";
+        }
+        function page2() {
+            window.location.href = "page-2.html";
+        }
+        function page3() {
+            window.location.href = "page-3.html";
+        }
+        function page4() {
+            window.location.href = "page-4.html";
+        }
+
+        function updateCounter() {
+            fetch('/api/contador')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('contador-vehiculos').textContent = "Vehículos disponibles: " + data.disponibles;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Función para actualizar la tabla de registros
+        function updateTable() {
+            fetch('/api/registros')
+                .then(response => response.json())
+                .then(data => {
+                    let tableBody = document.getElementById('tabla-registros-body');
+                    tableBody.innerHTML = '';  // Limpiar la tabla
+
+                    data.registros.forEach((registro) => {
+                        let row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${registro.id}</td>
+                            <td>${registro.nombre_conductor}</td>
+                            <td>${registro.placa}</td>
+                            <td>${registro.tipo}</td>
+                            <td>${registro.lugar_asignado}</td>
+                            <td>${registro.hora_ingreso}</td>
+                            <td>${registro.fecha_ingreso}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Actualizar el contador y la tabla cada 5 segundos
+        setInterval(updateCounter, 5000);
+        setInterval(updateTable, 5000);
+
+        // Llamar las funciones inmediatamente al cargar la página
+        window.onload = function() {
+            updateCounter();
+            updateTable();
+        };
+    </script>
+</head>
+<h1>Sistema de Registro Automático de Parqueadero</h1>
+<h2>Seleccione una opción del menú</h2>
+
+<button class="button"onclick="page1()">Registro de Entrada</button>
+<button class="button"onclick="page2()">Registro de Salida</button>
+<button class="button"onclick="page3()">Historial de Registros</button>
+<button class="button"onclick="page4()">Cámaras de Seguridad</button>
+
+<div id="contador-vehiculos" class="counter"></div>
+<div class="table-container">
+    <h3>Historial de Registros</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre del Conductor</th>
+                <th>Placa de Vehículo</th>
+                <th>Tipo de Vehículo</th>
+                <th>Lugar Asignado</th>
+                <th>Hora de Ingreso</th>
+                <th>Fecha de Ingreso</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-registros-body">
+            <!-- Los registros se llenarán aquí dinámicamente -->
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
