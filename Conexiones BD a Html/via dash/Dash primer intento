@@ -1,0 +1,327 @@
+import dash
+from dash import dcc, html, dash_table
+from dash.dependencies import Input, Output, State
+import psycopg2
+from datetime import datetime
+import pandas as pd
+import dash_bootstrap_components as dbc
+
+
+# Conexión a la base de datos
+conn = psycopg2.connect(
+    dbname="Proyecto Corner",
+    user="postgres",
+    password="123456789",
+    host="localhost",
+    port="5432"
+)
+cursor = conn.cursor()
+
+# Creación de la aplicación Dash
+app = dash.Dash(__name__, suppress_callback_exceptions=True)
+
+
+# Consulta para obtener los registros
+consulta = "SELECT * FROM Registro"
+cursor.execute(consulta)
+rows_registro = cursor.fetchall()
+df_r = pd.DataFrame(rows_registro, columns=['ID', 'Nombre del Conductor', 'Placa de Vehiculo', 'Tipo del Vehiculo', 'Lugar Asignado', 'Hora de Ingreso', 'Fecha de Ingreso'])
+
+# Estilos de los botones del menú
+button_style = {
+    'background-color': '#004d99',
+    'color': 'white',
+    'padding': '20px',
+    'margin': '20px',
+    'border-radius': '8px',
+    'border': 'none',
+    'cursor': 'pointer',
+    'width': '250px',
+    'font-size': '1.2em',
+    'transition': 'transform 0.5s',
+}
+
+# Página principal con enlaces a las otras páginas
+app.layout = html.Div(
+    style={
+        'font-family': 'Arial, sans-serif',
+        'text-align': 'center',
+        'background-color': '#f7f7f7',
+        'padding': '50px'
+    },
+    children=[
+        html.H1("Sistema de registro Automático de Parqueadero ", style={'font-size': '4em','color': '#333','font-weight': 'bold'}),
+        html.H2("Seleccione una opción del menú", style={'font-size': '3em','color': '#333','font-weight': 'bold'}),
+        html.A("Cupos Disponibles", style={'font-size': '2em','color': '#333','font-weight': 'bold'}),
+        html.Div(id='contador-vehiculos', style={
+            'font-size': '2em',
+            'color': '#333',
+            'font-weight': 'bold'
+        }),
+        dcc.Interval(
+            id='interval-component',
+            interval=1*1000,  # Actualiza cada 1 segundo
+            n_intervals=0
+        ),
+        html.Div(
+            children=[
+                html.A(
+                    html.Button('Registro de Entrada de Vehículos', style=button_style),
+                    href='/page-1',
+                ),
+                html.A(
+                    html.Button('Registro de Salida de Vehículos', style=button_style),
+                    href='/page-2',
+                ),
+                html.A(
+                    html.Button('Historial de Registros', style=button_style),
+                    href='/page-3',
+                ),
+                html.A(
+                    html.Button('Cámaras de Seguridad', style=button_style),
+                    href='/page-4',
+                ),
+            ],
+            style={'display': 'flex', 'justify-content': 'center'}
+        ),
+        dcc.Location(id='url', refresh=False),
+        html.Div(id='page-content'),
+    ]
+)
+
+# Callback para actualizar el contenido según la URL
+@app.callback(
+    Output('page-content', 'children'),
+    [Input('url', 'pathname')]
+)
+def display_page(pathname):
+    if pathname == '/page-1':
+        return page_1_layout
+    elif pathname == '/page-2':
+        return page_2_layout
+    elif pathname == '/page-3':
+        return html.Div([
+            page_3_layout,
+            dcc.Interval(  # Intervalo para actualizar la tabla en la página 3
+                id='interval-update-table',
+                interval=1*1000,  # Actualiza cada 10 segundos
+                n_intervals=0
+            )
+        ])
+    elif pathname == '/page-4':
+        return page_4_layout
+    else:
+        return html.Div("Bienvenido al sistema de parqueadero")
+
+# Página 1: Registro de Vehículos
+page_1_layout = html.Div(
+    style={'padding': '20px'},
+    children=[
+        html.H1("Registro Entrada de Vehículos", style={'color': '#004d99'}),
+        html.Label("Nombre del Conductor:", style={'font-weight': 'bold'}),
+        dcc.Input(id='input-nombre', type='text', value='', style={'width': '100%', 'padding': '10px', 'margin-bottom': '10px'}),
+        html.Label("Placa del Vehículo:", style={'font-weight': 'bold'}),
+        dcc.Input(id='input-placa', type='text', value='', style={'width': '100%', 'padding': '10px', 'margin-bottom': '10px'}),
+        html.Label("Tipo del Vehículo:", style={'font-weight': 'bold'}),
+        dcc.Dropdown(
+            id='dropdown-Tipo_V',
+            options=[
+                {'label': 'Carro', 'value': 'Carro'},
+                {'label': 'Camioneta', 'value': 'Camioneta'},
+                {'label': 'Moto', 'value': 'Moto'}
+            ],
+            style={'width': '100%', 'padding': '10px', 'margin-bottom': '10px'}
+        ),
+        html.Button('Registrar Entrada', id='submit-entrada', n_clicks=0, 
+                    style={'background-color': '#004d99', 'color': 'white', 'padding': '10px 20px', 'border': 'none', 'border-radius': '4px', 'cursor': 'pointer', 'width': '100%'}),
+        html.Div(id='output-message-entrada', style={'margin-top': '20px'})
+    ]
+)
+
+# Página 2: Registro de Salida de Vehículos
+page_2_layout = html.Div(
+    style={'padding': '20px'},
+    children=[
+        html.H1("Registro Salida de Vehículos", style={'color': '#004d99'}),
+        html.Label("Placa del Vehículo:", style={'font-weight': 'bold'}),
+        dcc.Input(id='input-placa-salida', type='text', value='', style={'width': '100%', 'padding': '10px', 'margin-bottom': '10px'}),
+        html.Label("Tipo del Vehículo:", style={'font-weight': 'bold'}),
+        dcc.Dropdown(
+            id='dropdown-Tipo_VS',
+            options=[
+                {'label': 'Carro', 'value': 'Carro'},
+                {'label': 'Camioneta', 'value': 'Camioneta'},
+                {'label': 'Moto', 'value': 'Moto'}
+            ],
+            style={'width': '100%', 'padding': '10px', 'margin-bottom': '10px'}
+        ),
+        html.Button('Registrar Salida', id='submit-salida', n_clicks=0, 
+                    style={'background-color': '#004d99', 'color': 'white', 'padding': '10px 20px', 'border': 'none', 'border-radius': '4px', 'cursor': 'pointer', 'width': '100%'}),
+        html.Div(id='output-message-salida', style={'margin-top': '20px'})
+    ]
+)
+
+
+# Página 3: Historial Registros
+page_3_layout = html.Div(
+    children=[
+        html.H2("Historial de registro", style={'color': '#004d99'}),
+        dbc.Container([
+            dash_table.DataTable(
+                id='tbl',  
+                style_data={'color': 'black', 'backgroundColor': 'white'},
+                style_header={
+                    'border': '1px solid black',
+                    'backgroundColor': 'rgb(210, 210, 210)',
+                    'color': 'black',
+                    'fontWeight': 'bold'
+                },
+                style_data_conditional=[{
+                    'if': {'row_index': 'odd'},
+                    'backgroundColor': 'rgb(220, 220, 220)',
+                }],
+                style_cell={
+                    'fontSize': 20,
+                    'font-family': 'sans-serif',
+                    'border': '1px solid grey'
+                }
+            ),
+            dbc.Alert(id='tbl_out'),
+        ])
+    ]
+)
+
+# Página 4: Cámaras de Seguridad
+page_4_layout = html.Div(
+    children=[
+        html.H2("Cámaras de Seguridad", style={'color': '#004d99'}),
+        html.P("Contenido de las cámaras de seguridad...")
+    ]
+)
+
+# Callback para el contador de vehículos
+@app.callback(
+    Output('contador-vehiculos', 'children'),
+    Input('interval-component', 'n_intervals')
+)
+def update_contador(n):
+    cursor.execute("""
+        SELECT COUNT(*) 
+        FROM Lugar_Parking 
+        WHERE disponible = 'True'
+    """)
+    disponible_count = cursor.fetchone()[0]
+    
+    return f"{disponible_count} cupos disponibles"
+
+# Callback para registrar la entrada del vehículo
+@app.callback(
+    Output('output-message-entrada', 'children'),
+    [Input('submit-entrada', 'n_clicks')],
+    [State('input-nombre', 'value'),
+     State('input-placa', 'value'),
+     State('dropdown-Tipo_V', 'value')]
+)
+def registrar_entrada(n_clicks, nombre, Placa_Vehiculo, Tipo_Vehiculo):
+    if n_clicks > 0:
+        try:
+            # Verificar si el nombre del conductor y la placa están relacionados
+            query = """
+            SELECT 1 FROM Conductor
+            WHERE nombre = %s AND Placa_Vehiculo = %s
+            """
+            cursor.execute(query, (nombre, Placa_Vehiculo))
+            relacion_valida = cursor.fetchone()
+
+            if not relacion_valida:
+                return html.Div("Error: El nombre del conductor no está relacionado con la placa del vehículo ingresado.",
+                                style={'color': 'red'})
+            # Verificar si tipo y la placa están relacionados
+            query = """
+            SELECT 1 FROM Vehiculo
+            WHERE Placa = %s AND Tipo_Vehiculo = %s
+            """
+            cursor.execute(query, (Placa_Vehiculo, Tipo_Vehiculo))
+            relacion_valida1 = cursor.fetchone()
+
+            if not relacion_valida1:
+                return html.Div("Error: El tipo de Vehículo no coincide con la Placa en la Base de Datos.",
+                                style={'color': 'red'})
+            
+            # Si la relación es válida, proceder con la inserción
+            insert_query = """
+            INSERT INTO REGISTRO (nombre, Placa_Vehiculo, Tipo_Vehiculo, hora_ingreso, fecha_ingreso)
+            VALUES (%s, %s, %s, current_time, current_date)
+            RETURNING lugar_parqueo
+            """
+            cursor.execute(insert_query, (nombre, Placa_Vehiculo, Tipo_Vehiculo))
+            lugar_parqueo = cursor.fetchone()[0]  # Obtener el lugar de parqueo asignado
+
+            conn.commit()
+
+            return html.Div(f"Vehículo registrado con éxito: El usuario {nombre} ingresó el vehículo con placa {Placa_Vehiculo} en el lugar de parqueo {lugar_parqueo}.",
+                            style={'color': 'green'})
+
+        except Exception as e:
+            conn.rollback()
+            return html.Div(f"Error al registrar: {str(e)}", style={'color': 'red'})
+
+    return "Introduce los datos y presiona 'Registrar Entrada'."
+
+# Callback para registrar la salida del vehículo
+@app.callback(
+    Output('output-message-salida', 'children'),
+    [Input('submit-salida', 'n_clicks')],
+    [State('input-placa-salida', 'value'),
+     State('dropdown-Tipo_VS', 'value')]
+)
+def registrar_salida(n_clicks, Placa_Vehiculo, Tipo_Vehiculo):
+    if n_clicks > 0:
+        try:
+            # Verificar si tipo y la placa están relacionados
+            query = """
+            SELECT 1 FROM Vehiculo
+            WHERE Placa = %s AND Tipo_Vehiculo = %s
+            """
+            cursor.execute(query, (Placa_Vehiculo, Tipo_Vehiculo))
+            relacion_valida1 = cursor.fetchone()
+
+            if not relacion_valida1:
+                return html.Div("Error: El tipo de Vehículo no coincide con la Placa en la Base de Datos.",
+                                style={'color': 'red'})
+            
+            # Eliminar el registro del vehículo
+            query = """
+            DELETE FROM Registro
+            WHERE Placa_Vehiculo = %s
+            """
+            cursor.execute(query, (Placa_Vehiculo,))
+            conn.commit()
+
+            if cursor.rowcount == 0:
+                return html.Div("Error: El vehículo no está registrado en el sistema.", style={'color': 'red'})
+
+            return html.Div(f"Vehículo registrado como salido: El vehículo con placa {Placa_Vehiculo} ha salido del parqueadero.",
+                            style={'color': 'green'})      
+        except Exception as e:
+            conn.rollback()
+            return html.Div(f"Error: {str(e)}", style={'color': 'red'})
+
+    return "Introduce la placa y tipo del vehículo, y presiona 'Registrar Salida'."
+
+
+# Callback para actualizar la tabla del historial de registros
+@app.callback(
+    Output('tbl', 'data'),
+    Input('interval-update-table', 'n_intervals')
+)
+def update_historial(n):
+    cursor.execute("SELECT * FROM Registro")
+    rows = cursor.fetchall()
+    df = pd.DataFrame(rows, columns=['ID', 'Nombre del Conductor', 'Placa de Vehiculo', 'Tipo del Vehiculo', 'Lugar Asignado', 'Hora de Ingreso', 'Fecha de Ingreso'])
+    
+    return df.to_dict('records')
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
